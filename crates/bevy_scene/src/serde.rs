@@ -196,7 +196,7 @@ impl<'a, 'de> Visitor<'de> for SceneVisitor<'a> {
             }
         }
 
-        let resources = resources.ok_or_else(|| Error::missing_field(SCENE_RESOURCES))?;
+        let resources = resources.unwrap_or_default();
         let entities = entities.ok_or_else(|| Error::missing_field(SCENE_ENTITIES))?;
 
         Ok(DynamicScene {

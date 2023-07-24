@@ -13,11 +13,11 @@ use bevy_ecs::{component::Component, reflect::ReflectComponent};
 use bevy_reflect::{std_traits::ReflectDefault, Reflect, ReflectDeserialize, ReflectSerialize};
 use bevy_utils::Uuid;
 use crossbeam_channel::{Receiver, Sender};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Visitor};
 
 /// A unique, stable asset id.
 #[derive(
-    Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize, Reflect,
+    Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Reflect,
 )]
 #[reflect_value(Serialize, Deserialize, PartialEq, Hash)]
 pub enum HandleId {
@@ -26,6 +26,35 @@ pub enum HandleId {
 
     /// A handle id of a pending asset.
     AssetPathId(AssetPathId),
+}
+
+impl<'de> Deserialize<'de> for HandleId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de> {
+        deserializer.deserialize_string(PathVisitor)
+    }
+}
+
+struct PathVisitor;
+
+impl<'de> Visitor<'de> for PathVisitor {
+    type Value = HandleId;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "a string pointing to an asset")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error, {
+        if v.is_empty() {
+            Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(v), &self))
+        } else {
+            Ok(AssetPath::from(v).into())
+        }
+    }
+
 }
 
 impl From<AssetPathId> for HandleId {
