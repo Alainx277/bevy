@@ -125,7 +125,7 @@ impl Plugin for ScheduleRunnerPlugin {
                     {
                         while let Ok(delay) = tick(&mut app, wait) {
                             if let Some(delay) = delay {
-                                std::thread::sleep(delay);
+                                spin_sleep::sleep(delay);
                             }
                         }
                     }
